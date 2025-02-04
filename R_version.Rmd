@@ -30,3 +30,24 @@ ks_test <- ks.test(setosa_sepal_length, "pnorm", sample_mean, sample_sd)
 D_statistic <- ks_test$statistic
 print(D_statistic)
 ```
+
+## c)
+```{r}
+MC <- 1000
+n <- 50
+D_simulated <- numeric(MC)
+
+set.seed(42)  
+for (i in 1:MC) {
+  sample_data <- rnorm(n, mean = mean(setosa_sepal_length), sd = sd(setosa_sepal_length))
+  D_simulated[i] <- ks.test(sample_data, "pnorm", mean(sample_data), sd(sample_data))$statistic
+}
+D_simulated
+```
+
+## d)
+We can't reject the H0. So we don't have reasons to believe that the data is not normally distributed.
+```{r}
+p_value_approx <- mean(D_simulated > D_statistic)
+print(p_value_approx)
+```
