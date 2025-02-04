@@ -1,0 +1,32 @@
+```{r}
+# Load necessary libraries
+library(datasets)
+library(stats)
+
+data("iris")
+```
+
+# Exercise 1
+
+## a)
+We can't reject the H0. So we don't have reasons to believe that the data is not normally distributed.
+
+```{r}
+setosa_sepal_length <- iris$Sepal.Length[iris$Species == "setosa"]
+print(setosa_sepal_length)
+
+shapiro_test <- shapiro.test(setosa_sepal_length)
+print(shapiro_test)
+```
+
+## b)
+
+```{r}
+sample_mean <- mean(setosa_sepal_length)
+print(sample_mean)
+sample_sd <- sd(setosa_sepal_length)
+print(sample_sd)
+ks_test <- ks.test(setosa_sepal_length, "pnorm", sample_mean, sample_sd)
+D_statistic <- ks_test$statistic
+print(D_statistic)
+```
