@@ -46,8 +46,57 @@ D_simulated
 ```
 
 ## d)
+We aproximate the p-value by checking how many of the simulated D statistics with unespecified parameters are greater that the one computed directly from the sample with specified parameters.
 We can't reject the H0. So we don't have reasons to believe that the data is not normally distributed.
 ```{r}
 p_value_approx <- mean(D_simulated > D_statistic)
 print(p_value_approx)
+```
+
+# Exercise 2
+
+```{r}
+set.seed(42)
+
+claim_prob_high <- 0.02
+claim_prob_medium <- 0.01
+claim_prob_low <- 0.0025
+
+prob_high_risk <- 0.1
+prob_medium_risk <- 0.2
+prob_low_risk <- 0.7
+
+MC <- 10000  # Number Monte Carlo claims
+claims_high_risk <- 0 # Number of high risk claims
+count_claims <- 0 # Total claims counter
+
+while (count_claims < MC) {
+  # Select random client
+  client_type <- sample(c("high", "medium", "low"), size = 1, prob = c(prob_high_risk, prob_medium_risk, prob_low_risk), replace = TRUE)
+
+  # Determine if the selected client makes a claim based on the probability. We just pick a random value between 0 and 1 (runif) and check if its smaller than the prob defined. 
+  if (client_type == "high" && runif(1) < claim_prob_high) {
+    claims_high_risk <- claims_high_risk + 1
+    count_claims <- count_claims + 1
+  } else if (client_type == "medium" && runif(1) < claim_prob_medium) {
+    count_claims <- count_claims + 1
+  } else if (client_type == "low" && runif(1) < claim_prob_low) {
+    count_claims <- count_claims + 1
+  }
+}
+
+# Calculate the ratio of claims of high risk out of the 10000 claims. 
+#That will be an aproximation of the probability of a claim coming from a high risk client.
+prob_estimate <- claims_high_risk / MC
+
+# We compute the confidence interval using the formula p +- z_value*sqrt(p(1-p)/n). Where p=prob of being high risk. n = n clients.
+# We can do this because we have big enough n to apply the CLT and use the normal aproximation to the binomial. (Is high risk vs Is not high risk)
+alpha <- 0.01
+z_value <- qnorm(1-alpha/2)  # 99% confidence level
+stderr <- sqrt(prob_estimate * (1 - prob_estimate) / MC)
+ci_lower <- prob_estimate - z_value * stderr
+ci_upper <- prob_estimate + z_value * stderr
+
+cat("Estimated probability:", prob_estimate, "\n")
+cat("99% Confidence Interval: [", ci_lower, ",", ci_upper, "]\n")
 ```
