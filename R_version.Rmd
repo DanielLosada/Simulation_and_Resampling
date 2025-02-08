@@ -100,3 +100,147 @@ ci_upper <- prob_estimate + z_value * stderr
 cat("Estimated probability:", prob_estimate, "\n")
 cat("99% Confidence Interval: [", ci_lower, ",", ci_upper, "]\n")
 ```
+
+# Exercise 3
+
+```{r}
+
+set.seed(234)
+
+MC <- 1000
+
+f <- function(x) {
+  return(exp(exp(x)))
+}
+
+gen_samples <- function(n) {
+  u <- runif(n, 0, 1) 
+  samples <- f(u)      
+  return(samples)
+}
+
+sample <- gen_samples(MC)
+
+#Based on the LLN, the integral of this sample can be approximated by the sample mean, so we can just calculate it from the samples we have and approximate that integral.
+
+get_parameters <- function(samp) {
+  n <- length(samp)
+  s_mean <- mean(samp)  
+  s_var <- var(samp)    
+  
+  CI <- c(
+    s_mean - (qnorm(0.975) * (sqrt(s_var) / sqrt(n))),
+    s_mean + (qnorm(0.975) * (sqrt(s_var) / sqrt(n)))
+  )
+  
+  return(list(s_mean = s_mean, CI = CI))
+}
+
+result <- get_parameters(sample)
+print(result)
+
+# To get a 99%CI with a width of 0.5, we can just try different sample sizes.
+
+size_test <- function(n) {
+  sample <- gen_samples(n)
+  integral_CI <- get_parameters(sample)
+  width <- integral_CI$CI[2] - integral_CI$CI[1]
+  return(width)
+}
+
+width <- size_test(700)
+print(width)
+
+# From this, we can determine that 700 samples would get us a 99% CI with a width of 0.5
+
+```
+
+# Exercise 4
+
+We can approximate the integrals using the previous monte carlo approximation
+
+```{r}
+library(pracma)
+
+gen_samples <- function(n, func, a, b) {
+  u <- runif(n, 0, 1) 
+  u <- a + ((b - a) * u) 
+  samples <- func(u) 
+  return(samples)
+}
+
+mc_integral <- function(a, b, n, func) {
+  sample <- gen_samples(n, func, a, b)
+  integral <- (b - a) * mean(sample)
+  return(integral)
+}
+
+# 1
+f1 <- function(x) {
+  return(exp(x + x^2))
+}
+
+result_quad <- integral(f1, -2, 2)
+result_mc <- mc_integral(-2, 2, 10000, f1)
+print(c(result_quad, result_mc))
+```
+
+In this first example, we get pretty close to the real value using monte carlo approximations.
+
+```{r}
+gen_samples_2d <- function(n, func, a, b) {
+  u <- runif(n, 0, 1) 
+  v <- runif(n, 0, 1) 
+  u <- a + ((b - a) * u)
+  v <- a + ((b - a) * v)
+  samples <- func(u, v) 
+  return(samples)
+}
+
+mc_integral_2d <- function(a, b, n, func) {
+  sample <- gen_samples_2d(n, func, a, b)
+  integral <- (b - a)^2 * mean(sample)
+  return(integral)
+}
+
+#2
+f2 <- function(x, y) {
+  return(exp((x + y)^2))
+}
+
+result_quad2d <- integral2(f2, 0, 1, 0, 1)$Q
+result_mc2d <- mc_integral_2d(0, 1, 1000, f2)
+print(c(result_quad2d, result_mc2d))
+```
+
+Here, we also get quite close to the actual value, although with a good bit of variation.
+
+```{r}
+gen_samples_variable_limits <- function(n, func) {
+  u <- runif(n, 0, 100000) 
+  v <- runif(n, 0, u) 
+  samples <- func(v, u)
+  return(samples)
+}
+
+mc_integral_variable_limits <- function(n, func) {
+  sample <- gen_samples_variable_limits(n, func)
+  integral <- mean(sample)  # Estimate the integral
+  return(integral)
+}
+
+#3
+f3 <- function(y, x) {
+  return(exp(-(x + y)))
+}
+
+upper_limit_y <- function(x) {
+  return(x)
+}
+result_quad2d_variable <- integral2(f3, 0, 100000, 0, upper_limit_y)$Q
+result_mc2d_variable <- mc_integral_variable_limits(1000, f3)
+print(c(result_quad2d_variable, result_mc2d_variable))
+```
+
+Here, we reach the described value only occasionally and only when using large numbers rather than infinity, since we can't take infinite samples. In this case, monte carlo integration suffers from the limitations of random sampling against asymptotic limits.
+
