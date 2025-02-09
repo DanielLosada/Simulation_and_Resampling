@@ -109,11 +109,11 @@ set.seed(234)
 
 MC <- 1000
 
-f <- function(x) {
+f <- function(x) { # our f() function
   return(exp(exp(x)))
 }
 
-gen_samples <- function(n) {
+gen_samples <- function(n) { #generate our samples and apply our f() func
   u <- runif(n, 0, 1) 
   samples <- f(u)      
   return(samples)
@@ -123,7 +123,7 @@ sample <- gen_samples(MC)
 
 #Based on the LLN, the integral of this sample can be approximated by the sample mean, so we can just calculate it from the samples we have and approximate that integral.
 
-get_parameters <- function(samp) {
+get_parameters <- function(samp) { #function to wrap everything together
   n <- length(samp)
   s_mean <- mean(samp)  
   s_var <- var(samp)    
@@ -141,7 +141,7 @@ print(result)
 
 # To get a 99%CI with a width of 0.5, we can just try different sample sizes.
 
-size_test <- function(n) {
+size_test <- function(n) { #function to test different sample sizes
   sample <- gen_samples(n)
   integral_CI <- get_parameters(sample)
   width <- integral_CI$CI[2] - integral_CI$CI[1]
@@ -162,21 +162,21 @@ We can approximate the integrals using the previous monte carlo approximation
 ```{r}
 library(pracma)
 
-gen_samples <- function(n, func, a, b) {
+gen_samples <- function(n, func, a, b) { #modified version of our gen sample func
   u <- runif(n, 0, 1) 
   u <- a + ((b - a) * u) 
   samples <- func(u) 
   return(samples)
 }
 
-mc_integral <- function(a, b, n, func) {
+mc_integral <- function(a, b, n, func) { #simpler version get parameters
   sample <- gen_samples(n, func, a, b)
   integral <- (b - a) * mean(sample)
   return(integral)
 }
 
 # 1
-f1 <- function(x) {
+f1 <- function(x) { #our f() func for this problem
   return(exp(x + x^2))
 }
 
@@ -185,10 +185,10 @@ result_mc <- mc_integral(-2, 2, 10000, f1)
 print(c(result_quad, result_mc))
 ```
 
-In this first example, we get pretty close to the real value using monte carlo approximations.
+In this first example, we get pretty close to the real value using Monte Carlo approximations.
 
 ```{r}
-gen_samples_2d <- function(n, func, a, b) {
+gen_samples_2d <- function(n, func, a, b) { #modified version of the prior function to accept 2 vars
   u <- runif(n, 0, 1) 
   v <- runif(n, 0, 1) 
   u <- a + ((b - a) * u)
@@ -197,14 +197,14 @@ gen_samples_2d <- function(n, func, a, b) {
   return(samples)
 }
 
-mc_integral_2d <- function(a, b, n, func) {
+mc_integral_2d <- function(a, b, n, func) { #also modified to accept 2 params
   sample <- gen_samples_2d(n, func, a, b)
   integral <- (b - a)^2 * mean(sample)
   return(integral)
 }
 
 #2
-f2 <- function(x, y) {
+f2 <- function(x, y) { #problem function
   return(exp((x + y)^2))
 }
 
@@ -216,21 +216,21 @@ print(c(result_quad2d, result_mc2d))
 Here, we also get quite close to the actual value, although with a good bit of variation.
 
 ```{r}
-gen_samples_variable_limits <- function(n, func) {
+gen_samples_variable_limits <- function(n, func) { #accept multiple vars, but simplified
   u <- runif(n, 0, 100000) 
   v <- runif(n, 0, u) 
   samples <- func(v, u)
   return(samples)
 }
 
-mc_integral_variable_limits <- function(n, func) {
+mc_integral_variable_limits <- function(n, func) { #same as older version
   sample <- gen_samples_variable_limits(n, func)
-  integral <- mean(sample)  # Estimate the integral
+  integral <- mean(sample)
   return(integral)
 }
 
 #3
-f3 <- function(y, x) {
+f3 <- function(y, x) { #problem function
   return(exp(-(x + y)))
 }
 
