@@ -1,3 +1,5 @@
+## Daniel Losada and Sergio Quintanilla
+
 # Exercise 1
 
 ```{r}
@@ -98,3 +100,84 @@ ggplot(data.frame(S = samples_S), aes(x = S)) +
   theme_minimal()
 
 ```
+
+# Excercise 3
+
+First, let's observe what we expect to see using the truncnorm library's random sampling distribution.
+
+```{r}
+library(truncnorm)
+plot(density(rtruncnorm(1000,a=-1,b=1,mean=0,sd=1))) 
+```
+
+Now let's test the different sampling methods.
+
+## a)
+```{r, warning=FALSE}
+AR_norm = function(n, off=F){
+  data = AR.Sim ( n = n ,
+    f_X = function (y){ dtruncnorm(y,-1,1,0,1)} ,
+    Y.dist = "norm" , Y.dist.par = c (0,1) ,
+    Rej.Num = TRUE , Rej.Rate = TRUE , Acc.Rate = TRUE )
+  if (off == T) {dev.off()} #to block out plots in efficiency test
+  plot(density(data))
+  if (off == T) {dev.off()}
+
+}
+AR_norm(500)
+```
+
+## b)
+
+```{r, warning=FALSE}
+AR_unif = function(n,off=F){
+  data = AR.Sim ( n = n ,
+    f_X = function (y){ dtruncnorm(y,-1,1,0,1)} ,
+    Y.dist = "unif" , Y.dist.par = c (-1,1) ,
+    Rej.Num = TRUE , Rej.Rate = TRUE , Acc.Rate = TRUE)
+  if (off == T) {dev.off()} #to block out plots in efficiency test
+  plot(density(data))
+  if (off == T) {dev.off()}
+
+}
+
+AR_unif(500)
+```
+
+Overall, a and b look quite similar, although not exactly, but both estimate a truncated distribution quite well. The uniform one appears quite similar to a common normal distribution, indicating it might be underestimating the variance around the mean. However, the normal version appears to have more skew, which would make sense given it has another layer of bias, depending on the candidate normal distribution's behavior.
+
+## c)
+```{r}
+
+I_norm = function(n, off=F){
+  #set our parameters for the truncated distribution
+  mean <- 0
+  sd <- 1
+  a <- -1
+  b <- 1
+  u <- runif(n)
+  
+  #apply the inverse CDF to transform the uniform rv to a truncated normal
+  sim_inv <- qtruncnorm(u, mean = mean, sd = sd, a = a, b = b)
+  if (off == F) {plot(density(sample_truncated_normal))} #to block out plots in efficiency test
+}
+I_norm(500)
+
+```
+
+This one appears mostly like a regular normal distribution with some irregularities, but is not as close as the prior two sampling methods.
+
+```{r, warning=FALSE}
+library(microbenchmark)
+n=500
+microbenchmark( #use microbenchmark to compare efficiencies
+  AR_norm = AR_norm(n, off=T),
+  AR_unif = AR_unif(n, off=T),
+  I_norm = I_norm(n, off=T),
+  times = 30
+)
+
+```
+
+We can see that the inverse transform technique was by far the fastest, exponentially faster than either Accept-Reject algorithm. Within AR algorithms, the uniform candidate density took half the time the normal one did. That being said, looking at the graphs above, the distributions appear to be more accurately estimated by the normal AR algorithm, which makes sense given we expect a tradeoff between accuracy and speed.
+
