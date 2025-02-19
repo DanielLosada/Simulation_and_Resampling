@@ -9,7 +9,6 @@ simulate_T <- function(n) {
   return(T)
 }
 
-# Example usage
 set.seed(123)
 samples <- simulate_T(10000)
 
@@ -18,7 +17,6 @@ hist(samples, probability = TRUE, col = "lightblue", breaks = 50, main = "Simula
 
 # Overlay theoretical density (Derivative of CDF)
 curve(6 * (2^3) / x^4, from = 2, to = max(samples), add = TRUE, col = "red", lwd = 2)
-
 ```
 
 ```{r}
@@ -39,7 +37,6 @@ samples_rcpp <- simulate_T_rcpp(10000)
 # Verify by histogram
 hist(samples_rcpp, probability = TRUE, col = "lightblue", breaks = 50, main = "Simulated Samples from F_T(t) - Rcpp", xlab = "T")
 curve(6 * (2^3) / x^4, from = 2, to = max(samples_rcpp), add = TRUE, col = "red", lwd = 2)
-
 ```
 
 # Exercise 2
@@ -47,15 +44,15 @@ curve(6 * (2^3) / x^4, from = 2, to = max(samples_rcpp), add = TRUE, col = "red"
 ```{r}
 library(ggplot2)
 
-### Part (a): Determine M such that f_S(t) ≤ M f_T(t) ###
+### (a): Determine M such that fS(t) ≤ MfT (t), where fS and fT are the density functions of S and T. ###
 f_S <- function(t) { 8 / t^5 }  # PDF of S ~ Pareto(2,4)
 f_T <- function(t) { 6 / t^4 }  # PDF of T ~ Pareto(2,3)
 
 # Compute M
 M <- max((f_S(2) / f_T(2)))  # Maximized at t = 2
-cat("(a) M =", M, "\n")  # Should output M = 2/3
+cat("(a) M =", M, "\n")
 
-### Part (b): Rejection Sampling Algorithm ###
+### (b):  Write an acceptance-rejection algorithm to simulate from FS. ###
 # Function to sample from Pareto(2,3) using inverse transform sampling
 rpareto_T <- function(n) {
   U <- runif(n)
@@ -77,7 +74,8 @@ rpareto_S <- function(n) {
   return(samples)
 }
 
-### Part (c): Monte Carlo Estimation of E[S] and Confidence Interval ###
+### (c):  Use your simulation algorithm to check that E[S] = 8/3 = 2.6667.
+#Show a 99% confidence interval algorithm based on MC = 10000 observations.
 set.seed(123)
 MC <- 10000
 samples_S <- rpareto_S(MC)
@@ -98,7 +96,6 @@ ggplot(data.frame(S = samples_S), aes(x = S)) +
   stat_function(fun = f_S, color = "red", lwd = 1.2) +
   labs(title = "Simulated Samples from Pareto(2,4)", x = "S", y = "Density") +
   theme_minimal()
-
 ```
 
 # Excercise 3
