@@ -1,3 +1,8 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
 ## Daniel Losada and Sergio Quintanilla
 
 # Exercise 1
@@ -110,6 +115,7 @@ First, let's observe what we expect to see using the truncnorm library's random 
 
 ```{r}
 library(truncnorm)
+library(AR)
 plot(density(rtruncnorm(1000,a=-1,b=1,mean=0,sd=1))) 
 ```
 
@@ -162,7 +168,7 @@ I_norm = function(n, off=F){
   
   #apply the inverse CDF to transform the uniform rv to a truncated normal
   sim_inv <- qtruncnorm(u, mean = mean, sd = sd, a = a, b = b)
-  if (off == F) {plot(density(sample_truncated_normal))} #to block out plots in efficiency test
+  if (off == F) {plot(density(sim_inv))} #to block out plots in efficiency test
 }
 I_norm(500)
 
