@@ -51,7 +51,6 @@ First, we determine a constant M such that the ratio of the target and instrumen
 ```{r}
 library(ggplot2)
 
-### (a): Determine M such that fS(t) ≤ MfT (t), where fS and fT are the density functions of S and T. ###
 f_S <- function(t) { 8 / t^5 }  # PDF of S ~ Pareto(2,4)
 f_T <- function(t) { 6 / t^4 }  # PDF of T ~ Pareto(2,3)
 
@@ -59,7 +58,6 @@ f_T <- function(t) { 6 / t^4 }  # PDF of T ~ Pareto(2,3)
 M <- max((f_S(2) / f_T(2)))  # Maximized at t = 2
 cat("(a) M =", M, "\n")
 
-### (b):  Write an acceptance-rejection algorithm to simulate from FS. ###
 # Function to sample from Pareto(2,3) using inverse transform sampling
 rpareto_T <- function(n) {
   U <- runif(n)
@@ -81,7 +79,6 @@ rpareto_S <- function(n) {
   return(samples)
 }
 
-### (c):  Use your simulation algorithm to check that E[S] = 8/3 = 2.6667.
 #Show a 99% confidence interval algorithm based on MC = 10000 observations.
 set.seed(123)
 MC <- 10000
