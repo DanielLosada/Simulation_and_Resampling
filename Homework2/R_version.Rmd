@@ -176,10 +176,10 @@ I_norm(500)
 
 This one appears mostly like a regular normal distribution with some irregularities, but is not as close as the prior two sampling methods.
 
-```{r, warning=FALSE}
+```{r, warning=FALSE,echo=T,results='hide'}
 library(microbenchmark)
 n=500
-microbenchmark( #use microbenchmark to compare efficiencies
+result=microbenchmark( #use microbenchmark to compare efficiencies
   AR_norm = AR_norm(n, off=T),
   AR_unif = AR_unif(n, off=T),
   I_norm = I_norm(n, off=T),
@@ -187,6 +187,11 @@ microbenchmark( #use microbenchmark to compare efficiencies
 )
 
 ```
+
+```{r}
+result
+```
+
 
 We can see that the inverse transform technique was by far the fastest, exponentially faster than either Accept-Reject algorithm. Within AR algorithms, the uniform candidate density took half the time the normal one did. That being said, looking at the graphs above, the distributions appear to be more accurately estimated by the normal AR algorithm, which makes sense given we expect a tradeoff between accuracy and speed.
 
