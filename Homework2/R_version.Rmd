@@ -1,6 +1,9 @@
 ## Daniel Losada and Sergio Quintanilla
 
 # Exercise 1
+we simulate random samples from a given cumulative distribution function (CDF) using the inverse transform method. This method allows us to generate random values from a specified distribution by applying the inverse of its CDF to uniform random numbers.
+
+By inverting this function, we derive a formula to transform uniform random numbers into samples that follow this distribution. We then generate and visualize these samples, comparing them with the theoretical probability density function (PDF).
 
 ```{r}
 simulate_T <- function(n) {
@@ -18,6 +21,7 @@ hist(samples, probability = TRUE, col = "lightblue", breaks = 50, main = "Simula
 # Overlay theoretical density (Derivative of CDF)
 curve(6 * (2^3) / x^4, from = 2, to = max(samples), add = TRUE, col = "red", lwd = 2)
 ```
+The histogram of simulated samples aligns well with the theoretical density function, confirming that the inverse transform method correctly generates values following the given distribution. The majority of values are concentrated near t=2, with a long right tail, as expected from the shape of the density function.
 
 ```{r}
 library(Rcpp)
@@ -40,6 +44,9 @@ curve(6 * (2^3) / x^4, from = 2, to = max(samples_rcpp), add = TRUE, col = "red"
 ```
 
 # Exercise 2
+We use the acceptance-rejection method to simulate samples from a Pareto distribution. Since its tail is not as heavy, we choose a Pareto(2,3) distribution as an instrumental density function to generate candidate samples efficiently.
+
+First, we determine a constant M such that the ratio of the target and instrumental density functions satisfies fS(t) <= M*fT(t) for all t > 2.
 
 ```{r}
 library(ggplot2)
@@ -97,6 +104,8 @@ ggplot(data.frame(S = samples_S), aes(x = S)) +
   labs(title = "Simulated Samples from Pareto(2,4)", x = "S", y = "Density") +
   theme_minimal()
 ```
+
+The estimated expectation from our simulation closely matches the theoretical value E[s]=2.6667, with a 99% confidence interval of approximately [2.646, 2.696], confirming the accuracy of our method. The histogram of the simulated values aligns well with the theoretical density.
 
 # Excercise 3
 
