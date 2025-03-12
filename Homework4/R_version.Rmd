@@ -1,0 +1,137 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+## Daniel Losada and Sergio Quintanilla
+
+```{r,warning=FALSE,message=FALSE}
+library(carData) #to load dataset
+library(dplyr)
+library(MASS)
+```
+
+
+# Exercise 1
+
+### a) LM Standard
+```{r, warning=FALSE}
+model = lm(prestige~ income+education, Duncan)
+n = nrow(Duncan)
+k = 2 #2 or 3? not 100% sure
+y_hat = model$fitted.values
+y_bar = mean(Duncan$prestige)
+E_hat = model$residuals
+
+F_stat_func = function(y_hat,y_bar,E_hat,n,k){
+  numerator = sum(((y_hat - y_bar)^2)/k)
+  denominator = sum((E_hat^2)/(n-k-1))
+  F_statistic = numerator/denominator
+  F_statistic
+}
+F_stat_func(y_hat,y_bar,E_hat,n,k)
+```
+
+### b) Bootstrap Pairs
+```{r, warning=FALSE}
+N = 1000 #number of times to repeat the resampling and recalc shit
+
+B_pairs = function(N){
+  out = vector(length=N)
+  for (i in 1:N){
+      samp = sample_n(Duncan,30,replace=T)
+      model = lm(prestige~ income+education, samp)
+      n = nrow(samp)
+      k = 2
+      y_hat = model$fitted.values
+      y_bar = mean(samp$prestige)
+      E_hat = model$residuals
+      out[i] = F_stat_func(y_hat,y_bar,E_hat,n,k)
+  }
+  out 
+}
+
+BP = B_pairs(N)
+hist(BP)
+sd(BP) / sqrt(length(BP)) #standard error
+
+```
+
+### c) Bootsrap Residuals
+```{r, warning=FALSE}
+N = 1000 #number of times to repeat the resampling and recalc
+
+B_residuals = function(N){
+  out = vector(length=N)
+  for (i in 1:N){
+      E_samp = sample(E_hat,30,replace=T)
+      Y_hat_star = y_hat + E_samp
+      out[i] = F_stat_func(Y_hat_star,y_bar,E_samp,n,k)
+  }
+  out
+}
+
+BR = B_residuals(N)
+hist(BR)
+sd(BR) / sqrt(length(BR)) #standard error
+```
+
+### d) RLM Standard
+```{r, warning=FALSE}
+model = rlm(prestige~ income+education, Duncan)
+summary(model)
+n = nrow(Duncan)
+k = 2 #2 or 3? not 100% sure
+y_hat = model$fitted.values
+y_bar = mean(Duncan$prestige)
+E_hat = model$residuals
+F_stat_func(y_hat,y_bar,E_hat,n,k)
+
+```
+
+### RLM with Bootstrap Pairs
+```{r, warning=FALSE}
+N = 1000 #number of times to repeat the resampling and recalc shit
+
+B_pairs_rlm = function(N){
+  out = vector(length=N)
+  for (i in 1:N){
+      samp = sample_n(Duncan,30,replace=T)
+      model = rlm(prestige~ income+education, samp)
+      n = nrow(samp)
+      k = 2
+      y_hat = model$fitted.values
+      y_bar = mean(samp$prestige)
+      E_hat = model$residuals
+      out[i] = F_stat_func(y_hat,y_bar,E_hat,n,k)
+  }
+  out 
+}
+
+BP = B_pairs_rlm(N)
+hist(BP)
+sd(BP) / sqrt(length(BP)) #standard error
+```
+
+### RLM with Bootstrap Residuals
+```{r, warning=FALSE}
+N = 1000 #number of times to repeat the resampling and recalc
+
+B_residuals = function(N){
+  out = vector(length=N)
+  for (i in 1:N){
+      E_samp = sample(E_hat,30,replace=T)
+      Y_hat_star = y_hat + E_samp
+      out[i] = F_stat_func(Y_hat_star,y_bar,E_samp,n,k)
+  }
+  out
+}
+
+BR = B_residuals(N)
+hist(BR)
+sd(BR) / sqrt(length(BR)) #standard error
+```
+
+The best performance we saw was in both bootstrap pairs approaches, most notably the rlm models, although both were quite good. This makes sense considering the operation time to accuracy tradeoff we see in most resampling and simulation situations. BP samples generally showed smaller F statistic standard errors and we can see in their histograms they had less spread than the BR samples. However, BR executed far faster than BP samples, for not a huge loss in accuracy. If we needed to work with vastly larger resampling sizes more frequently, BR sampling might be more effective.
+
+
