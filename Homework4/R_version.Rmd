@@ -135,3 +135,173 @@ sd(BR) / sqrt(length(BR)) #standard error
 The best performance we saw was in both bootstrap pairs approaches, most notably the rlm models, although both were quite good. This makes sense considering the operation time to accuracy tradeoff we see in most resampling and simulation situations. BP samples generally showed smaller F statistic standard errors and we can see in their histograms they had less spread than the BR samples. However, BR executed far faster than BP samples, for not a huge loss in accuracy. If we needed to work with vastly larger resampling sizes more frequently, BR sampling might be more effective.
 
 
+# Exercise 2
+
+```{r}
+# Load necessary libraries
+library(stats)
+library(boot)
+library(bootstrap)
+
+# Set seed for reproducibility
+set.seed(123)
+
+# Simulate ARMA(1,1) process
+n = 1200
+ar.params = 0.6  # AR(1) coefficient
+ma.params = -0.5  # MA(1) coefficient
+
+sim_data = arima.sim(n=n, list(ar=ar.params, ma=ma.params))
+
+# Fit ARMA(1,1) model using Maximum Likelihood Estimation (MLE)
+model = arima(sim_data, order=c(1,0,1))
+
+# Extract estimated parameters
+param_estimates = coef(model)
+
+arima_fit_resid = function(data, indices) {
+  boot_sample = data[indices]
+  fit = arima(boot_sample, order=c(1,0,1), optim.control = list(maxit=500))
+  return(coef(fit))
+}
+
+# Residual bootstrap
+set.seed(1)
+boot_res = boot(sim_data, statistic=arima_fit_resid, R=1000)
+valid_results = boot_res$t[complete.cases(boot_res$t), ]
+resid_std_errors = apply(valid_results, 2, sd)
+
+arima_fit_resid_block = function(ts_data) {
+  fit = tryCatch(
+    arima(ts_data, order=c(1,0,1), optim.control = list(maxit=500)),
+    error = function(e) return(rep(NA, 3))  # Return NA if estimation fails
+  )
+  return(coef(fit))
+}
+
+# Block bootstrap with different block sizes
+block_sizes = c(5, 10, 20)
+block_bootstrap_results = list()
+
+for (l in block_sizes) {
+  block_fit = tsboot(sim_data, statistic=arima_fit_resid_block, R=1000, l=l, sim="fixed")
+  #block_bootstrap_results[[as.character(l)]] = apply(block_fit$t, 2, sd)
+  block_bootstrap_results[[as.character(l)]] = apply(block_fit$t, 2, sd)
+}
+
+# Print results
+print("MLE Estimates:")
+print(param_estimates)
+
+print("Residual Bootstrap Standard Errors:")
+print(resid_std_errors)
+
+for (l in block_sizes) {
+  print(paste("Block Bootstrap Standard Errors (Block size =", l, "):"))
+  print(block_bootstrap_results[[as.character(l)]])
+}
+```
+# **Analysis of Bootstrap Results for ARMA(1,1) Model (R=1000)**
+
+## **1. MLE Estimates (Baseline Estimates)**
+The Maximum Likelihood Estimates (MLE) for the ARMA(1,1) parameters are:
+| Parameter  | Estimate  |
+|------------|-----------|
+| **AR(1)**   | 0.4726    |
+| **MA(1)**   | -0.4176   |
+| **Intercept** | 0.0251  |
+
+These serve as the **baseline estimates** for comparison with the bootstrap standard errors.
+
+---
+
+## **2. Residual Bootstrap Standard Errors**
+| Parameter  | Residual Bootstrap SE  |
+|------------|------------------------|
+| **AR(1)**   | 0.6094  |
+| **MA(1)**   | 0.6119  |
+| **Intercept** | 0.0287  |
+
+### **Key Observations:**
+- **Highest standard errors** among all methods.
+- This method **assumes i.i.d. residuals**, which is **not ideal for time series** since it ignores dependence.
+- Likely **overestimates uncertainty**, as it does not preserve time structure.
+
+---
+
+## **3. Block Bootstrap Standard Errors (Capturing Dependence)**
+| Parameter  | SE (l=5) | SE (l=10) | SE (l=20) |
+|------------|------------|------------|------------|
+| **AR(1)**   | 0.5175  | 0.4876  | 0.4820  |
+| **MA(1)**   | 0.5181  | 0.4854  | 0.4809  |
+| **Intercept** | 0.0304  | 0.0301  | 0.0313  |
+
+### **Key Observations:**
+- **Block bootstrap SEs are consistently lower than residual bootstrap SEs.**
+- **Block size `l=5` may underestimate variance**, as its SEs are slightly larger than `l=10` and `l=20`.
+- **SEs stabilize at `l=10` and `l=20`, suggesting they capture dependence better.**
+
+---
+
+## **4. Final Recommendation**
+- **Use Block Bootstrap with `l=10`** for reporting standard errors, as it provides stable estimates without excessive smoothing.
+- **Avoid residual bootstrap**, as it assumes independence and likely overestimates uncertainty.
+- **Block bootstrap SEs provide a more accurate representation of parameter variability in time series models.**
+
+---
+
+
+```{r}
+# Manual Residual Bootstrap
+set.seed(123)
+R = 1000  # Number of bootstrap samples
+manual_resid_boot = matrix(NA, nrow=R, ncol=3)  # Store bootstrap estimates
+
+for (i in 1:R) {
+  resampled_residuals = sample(model$residuals, replace=TRUE)  # Resample residuals
+  simulated_series = fitted(model) + resampled_residuals  # Reconstruct series
+  new_model = arima(simulated_series, order=c(1,0,1), optim.control=list(maxit=500))  # Refit model
+  manual_resid_boot[i, ] = coef(new_model)  # Store coefficients
+}
+
+# Compute standard errors
+manual_resid_SE = apply(manual_resid_boot, 2, sd)
+print("Manual Residual Bootstrap Standard Errors:")
+print(manual_resid_SE)
+
+```
+
+
+```{r}
+# Manual Block Bootstrap
+manual_block_boot = function(ts_data, block_size, R) {
+  n = length(ts_data)
+  num_blocks = ceiling(n / block_size)
+  boot_results = matrix(NA, nrow=R, ncol=3)  # Store bootstrap estimates
+
+  for (i in 1:R) {
+    start_points = sample(1:(n-block_size+1), num_blocks, replace=TRUE)  # Sample block start points
+    resampled_series = unlist(lapply(start_points, function(start) ts_data[start:(start+block_size-1)]))
+    resampled_series = resampled_series[1:n]  # Truncate to original length
+    new_model = arima(resampled_series, order=c(1,0,1), optim.control=list(maxit=500))  # Refit model
+    boot_results[i, ] = coef(new_model)
+  }
+
+  return(apply(boot_results, 2, sd))  # Return standard errors
+}
+
+# Compute standard errors for different block sizes
+set.seed(123)
+manual_block_SE_5 = manual_block_boot(sim_data, block_size=5, R=1000)
+manual_block_SE_10 = manual_block_boot(sim_data, block_size=10, R=1000)
+manual_block_SE_20 = manual_block_boot(sim_data, block_size=20, R=1000)
+
+# Print results
+print("Manual Block Bootstrap Standard Errors (l=5):")
+print(manual_block_SE_5)
+print("Manual Block Bootstrap Standard Errors (l=10):")
+print(manual_block_SE_10)
+print("Manual Block Bootstrap Standard Errors (l=20):")
+print(manual_block_SE_20)
+```
+
