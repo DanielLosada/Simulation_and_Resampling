@@ -1,7 +1,7 @@
 ---
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 ## Daniel Losada and Sergio Quintanilla
 
@@ -259,22 +259,13 @@ These serve as the **baseline estimates** for comparison with the bootstrap stan
 # Residual Bootstrap "By Hand"
 # -------------------------------
 
-# 1. Simulate ARMA(1,1) data (as you already have)
-set.seed(123)
-n <- 1200
-ar.param <- 0.6
-ma.param <- -0.5
-sim_data <- arima.sim(n=n, list(ar=ar.param, ma=ma.param))
-
-# 2. Fit ARMA(1,1) model to original data
-model <- arima(sim_data, order=c(1,0,1))
 orig_estimates <- coef(model)
 
 # Extract residuals (et) and construct fitted values (xt_hat = xt - et)
 residuals_orig <- residuals(model)
 fitted_vals <- sim_data - residuals_orig
 
-# 3. Loop over R bootstrap replications
+# Loop over R bootstrap replications
 R <- 1000
 param_matrix <- matrix(NA, nrow=R, ncol=length(orig_estimates))
 colnames(param_matrix) <- names(orig_estimates)
@@ -296,7 +287,7 @@ for(b in 1:R) {
   param_matrix[b, ] <- coef(fit_star)
 }
 
-# 4. Compute standard errors as SD across all replications
+# Compute standard errors as SD across all replications
 resid_boot_std_err <- apply(param_matrix, 2, sd)
 
 # -------------------------------
@@ -360,11 +351,13 @@ Below we compare the **manually coded** bootstrap methods with the results obtai
 #### Residual Bootstrap SEs
 
 **boot-Library** 
+
   - **AR(1)** SE = 0.6094  
   - **MA(1)** SE = 0.6119  
   - **Intercept** SE = 0.0287  
 
 **Manual** 
+
   - **AR(1)** SE ≈ 0.62  
   - **MA(1)** SE ≈ 0.62  
   - **Intercept** SE ≈ 0.028  
